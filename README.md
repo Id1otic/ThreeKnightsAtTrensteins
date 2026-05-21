@@ -86,7 +86,13 @@ main.py
 
 ## Screenshots
 
-Add screenshots here later.
+## Main Menu
+
+![Main Menu](/assets/images/README/menu.png)
+
+## Camera System
+
+![Camera System](/assets/images/README/camera_system.png)
 
 ---
 

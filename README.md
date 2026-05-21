@@ -88,11 +88,11 @@ main.py
 
 ## Main Menu
 
-![Main Menu](/assets/images/README/menu.png)
+![Main Menu](assets/images/README/menu.png)
 
 ## Camera System
 
-![Camera System](/assets/images/README/camera_system.png)
+![Camera System](assets/images/README/camera_system.png)
 
 ---
 

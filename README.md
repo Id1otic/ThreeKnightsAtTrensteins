@@ -27,7 +27,7 @@ git clone https://github.com/Id1otic/FiveKnightsAtTrensteins.git
 cd FiveKnightsAtTrensteins
 ```
 
-Install dependencies:
+Then install dependencies with:
 
 ```bash
 pip install -r requirements.txt

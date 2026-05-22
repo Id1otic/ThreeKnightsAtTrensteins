@@ -15,6 +15,7 @@ Survive the night while the Knights roam through security cameras searching for 
 - Fullscreen gameplay
 - Custom UI system
 - Cheesy jumpscare mechanics
+- Press ESC to exit the game.
 
 ---
 

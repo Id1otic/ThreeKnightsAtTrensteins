@@ -43,7 +43,13 @@ pip install pygame
 
 ## Running the Game
 
-Run:
+After installation, launch the game with:
+
+```bash
+fiveknightsattrensteins
+```
+
+Or run directly with:
 
 ```bash
 python main.py

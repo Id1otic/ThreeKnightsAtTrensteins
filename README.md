@@ -45,8 +45,6 @@ or install the project in editable mode:
 pip install -e .
 ```
 
-This installs the game and its dependencies while allowing live code edits without reinstalling.
-
 ---
 
 ## Running the Game

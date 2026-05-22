@@ -23,8 +23,8 @@ Survive the night while the Knights roam through security cameras searching for 
 Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Five-Knights-at-Trensteins.git
-cd Five-Knights-at-Trensteins
+git clone https://github.com/Id1otic/FiveKnightsAtTrensteins.git
+cd FiveKnightsAtTrensteins
 ```
 
 Install dependencies:

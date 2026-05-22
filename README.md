@@ -52,7 +52,7 @@ pip install -e .
 After installation, launch the game with:
 
 ```bash
-fiveknightsattrensteins
+five-knights-at-trensteins
 ```
 
 Or run directly with:

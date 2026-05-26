@@ -1,4 +1,4 @@
-import os, threading, sys
+import os, threading, sys, random
 from tkinter import messagebox
 from knight import Knight
 import data_types
@@ -54,6 +54,13 @@ class Game:
 
             self.screen.fill((0,0,0))
             self.screen.blit(loading_text_surface, loading_text_rect)
+
+            # Notice to exit the game
+            notice_text_surface = self.font.render(f"Press ESC to exit the game.", True, (0, 0, 255))
+            notice_text_rect = notice_text_surface.get_rect(center=(self.WIDTH // 2, self.HEIGHT // 2 + 100))
+
+            self.screen.blit(notice_text_surface, notice_text_rect)
+
             pygame.display.flip()
 
         # Images
@@ -223,6 +230,8 @@ class Game:
         self.static_sound.set_volume(0.01)
         self.static_channel = self.static_sound.play(-1)
 
+        self.lure_sounds: list[pygame.mixer.Sound] = []
+
         # Mouse & Panning
         pygame.mouse.set_pos(self.center)
         self.mouse_x = self.mouse_y = None # Defined later
@@ -245,18 +254,12 @@ class Game:
         self.show_credits = False
 
         # Button System
-        excluded = {"menu", "office"} # Temporary
-        
-        cams_pos = [
-            (345, 660), # Cam1
-            (345, 600), # Cam2
-            (100, 610), # ...
-            (75, 780),
-            (230, 650)
-        ]
         self.camera_buttons = [
-            self.create_text(scene.title(), cams_pos[i][0], cams_pos[i][1], 100, 50)
-            for i, scene in enumerate(s for s in self.scenes if s not in excluded)
+            self.create_text("Cam1", 345, 660, 100, 50),
+            self.create_text("Cam2", 345, 605, 100, 50),
+            self.create_text("Cam3", 100, 610, 100, 50),
+            self.create_text("Cam4", 75, 780, 100, 50),
+            self.create_text("Cam5", 230, 650, 100, 50)
         ]
 
     def stop(self) -> None:
@@ -440,39 +443,47 @@ class Game:
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
                 mouse_pos = event.pos
-
-                for button in self.not_playing_buttons:
-                    if button["rect"].collidepoint(mouse_pos):
-                        label = button['label']
-
-                        if label == "Start": # Start
-                            self.playing = True
+                
+                if self.playing:
+                    if self.camera_ui_active:
+                        if self.alt_camera_button['rect'].collidepoint(mouse_pos):
+                            self.camera_ui_active = False
                             self.scene = "office"
 
-                            for knight in self.knights:
-                                knight.initiate_moving()
+                        for button in self.camera_buttons:
+                            if button["rect"].collidepoint(mouse_pos):
+                                self.scene = button['label'].lower()
 
-                        elif label == "Credits": # Credits
-                            self.show_credits = not self.show_credits
-                
-                if not self.camera_ui_active:
-                    if self.camera_button['rect'].collidepoint(mouse_pos):
-                        self.camera_ui_active = True
+                        # Lure Sound
+                        # if self.lure_sound_button['rect'].collidepoint(mouse_pos):
+                            # random.choice(self.lure_sounds).play()
+                    else:
+                        if self.camera_button['rect'].collidepoint(mouse_pos):
+                            self.camera_ui_active = True
+                    
                 else:
-                    if self.alt_camera_button['rect'].collidepoint(mouse_pos):
-                        self.camera_ui_active = False
-                        self.scene = "office"
-
-                    for button in self.camera_buttons:
+                    for button in self.not_playing_buttons:
                         if button["rect"].collidepoint(mouse_pos):
-                            self.scene = button['label'].lower()
+                            label = button['label']
+
+                            if label == "Start": # Start
+                                self.playing = True
+                                self.scene = "office"
+
+                                for knight in self.knights:
+                                    knight.initiate_moving()
+
+                            elif label == "Credits": # Credits
+                                self.show_credits = not self.show_credits
     
     def check_jumpscare(self):
         for knight in self.knights:
             if knight.scene == "office":
+                # Jumpscare
                 self.camera_ui_active = False
-                self.scene = "office" # Jumpscare
-                # Then play sound
+                self.scene = "office"
+                
+                # knight.jumpscare_sound.play()
 
     def update_game(self, dt: float) -> None:
         '''
@@ -527,7 +538,7 @@ class Game:
         mouse = pygame.mouse.get_pos()
 
         if self.playing:
-            self.check_jumpscare()
+            self.check_jumpscare() # Both UI and Game
 
             if self.camera_ui_active:
                 self.screen.blit(self.mini_map[0], self.mini_map[1])

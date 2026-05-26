@@ -3,6 +3,7 @@ from typing import Any
 
 class Knight:
     MAP_TREE = { # A tree for valid cams based on position/scene.
+        'office': [],
         'cam1': ['office', 'cam2'],
         'cam2': ['cam1', 'cam3', 'cam5'],
         'cam3': ['cam2', 'cam4', 'cam5'],
@@ -11,6 +12,7 @@ class Knight:
     }
 
     MAP_TREE_OPTIMAL_PATH = {
+        'office': [],
         'cam1': ['office'],
         'cam2': ['cam1'],
         'cam3': ['cam2'],
@@ -57,3 +59,10 @@ class Knight:
         )
 
         self.thread.start()
+
+    def force_move(self, target: str) -> None:
+        if target in self.target_dict:
+            self.target_dict[self.scene]['knights_in_scene'].remove(self.name)
+            self.target_dict[target]['knights_in_scene'].append(self.name)
+        else:
+            return

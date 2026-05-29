@@ -24,5 +24,6 @@ class SceneData(TypedDict):
     image: pygame.Surface
     rect: pygame.Rect | None
     knights: dict[str, KnightData]
+    knights_in_scene: list[str]
 
 SceneStruct = dict[str, SceneData]

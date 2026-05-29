@@ -1,9 +1,7 @@
-import os, threading, sys, random
+import os, threading, sys, random, data_types, time
 from tkinter import messagebox
 from knight import Knight
-import data_types
 
-os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 import pygame
 pygame.init()
 
@@ -27,6 +25,8 @@ class Game:
         self.running = True
         self.game_over = False
         self.playing = False
+
+        self.time_left: int = 720 # Seconds
 
         self.WIDTH, self.HEIGHT = self.screen.get_size()
         self.center = (self.WIDTH // 2, self.HEIGHT // 2)
@@ -214,15 +214,17 @@ class Game:
         self.mini_map[1].y = 500
 
         self.lock = threading.Lock()
+
         self.knights = [
-            Knight(name, 'cam4', self.scenes, self.lock)
-            for name in ['mason', 'ethan']
+            Knight("mason", 'cam4', self.scenes, self.lock, pygame.mixer.Sound("assets/mason_jump.mp3"), 0.9),
+            Knight("ethan", 'cam4', self.scenes, self.lock, pygame.mixer.Sound("assets/ethan_jump.mp3"), 0.5)
         ]
 
         self.fix_img_dict(self.scenes, 1.25)
 
         # Sounds
-        self.camera_sound = pygame.mixer.Sound('assets/camera.mp3')
+        self.camera_sound = pygame.mixer.Sound("assets/camera.mp3")
+        self.camera_sound.set_volume(0.6)
         self.cam_sound_toggle = True
         self.camera_channel = None
         
@@ -230,7 +232,21 @@ class Game:
         self.static_sound.set_volume(0.01)
         self.static_channel = self.static_sound.play(-1)
 
-        self.lure_sounds: list[pygame.mixer.Sound] = []
+        self.ambient1_sound = pygame.mixer.Sound("assets/ambient1.mp3")
+        self.ambient1_sound.set_volume(0.05)
+        self.ambient1_channel = None
+
+        self.lure_sounds: list[pygame.mixer.Sound] = [
+            pygame.mixer.Sound("assets/Lure1.ogg"),
+            pygame.mixer.Sound("assets/Lure2.ogg"),
+            pygame.mixer.Sound("assets/Lure3.ogg"),
+            pygame.mixer.Sound("assets/Lure4.ogg"),
+            pygame.mixer.Sound("assets/Lure5.ogg")
+        ]
+
+        self.click_sound = pygame.mixer.Sound("assets/click.mp3")
+        self.click_channel: pygame.mixer.Channel | None = None
+        self.click_toggle = True
 
         # Mouse & Panning
         pygame.mouse.set_pos(self.center)
@@ -238,14 +254,16 @@ class Game:
         self.MOUSE_MOVE_PADDING = 75
         self.MOUSE_MOVE_SPEED = 300
 
-        # UI
+        # UI & Buttons
         self.not_playing_buttons = [
-            self.create_text("Start", 160, 350, 200, 100),
-            self.create_text("Credits", 174, 470, 175, 75),
+            self.create_text("Start", 160, 350, 200, 100, label="start"),
+            self.create_text("Credits", 174, 470, 175, 75, label="credits"),
         ]
 
         self.camera_button = self.create_text("Cameras", 10, self.HEIGHT - 85, 150, 75)
         self.alt_camera_button = self.create_text("X", 10, self.HEIGHT - 85, 150, 75, (255, 0, 0))
+
+        self.lure_sound_button = self.create_text("Play Lure", self.WIDTH - 200, self.HEIGHT - 100, 175, 75)
 
         self.credits = self.create_text("""Credits:
     Mason Rustad - Coder & Mason Enemy
@@ -253,7 +271,6 @@ class Game:
     Ethan Rustad - Ethan Enemy""", 50, 50, 900, 250)
         self.show_credits = False
 
-        # Button System
         self.camera_buttons = [
             self.create_text("Cam1", 345, 660, 100, 50),
             self.create_text("Cam2", 345, 605, 100, 50),
@@ -268,6 +285,16 @@ class Game:
         '''
         pygame.quit()
         sys.exit()
+
+    def update_time(self) -> None:
+        while not self.game_over:
+            time.sleep(1)
+
+            if self.playing:
+                self.time_left -= 1
+            
+            if self.time_left <= 0:
+                self.game_over = False
 
     def draw_buttons(self, buttons: list[data_types.ButtonStruct], mouse: tuple[int, int]) -> None:
         '''
@@ -285,6 +312,16 @@ class Game:
 
                 if pygame.mouse.get_pressed()[0]:
                     color = tuple(min(255, c+40) for c in color)
+                    
+                    # Sound effect
+                    if self.click_channel:
+                        if not self.click_channel.get_busy() and self.cam_sound_toggle:
+                            self.click_channel = self.click_sound.play()
+                            self.cam_sound_toggle = False
+                    else:
+                        self.click_channel = self.click_sound.play()
+                else:
+                    self.cam_sound_toggle = True
 
             pygame.draw.rect(self.screen, color, b['rect'])
             pygame.draw.rect(
@@ -319,7 +356,7 @@ class Game:
 
             y += surf.get_height() + 5
 
-    def create_text(self, text: str, x: int, y: int, w: int, h: int, color: tuple[int, int, int] = (100, 100, 100), text_color: tuple[int, int, int] = (255, 255, 255), background: bool = True) -> data_types.ButtonStruct:
+    def create_text(self, text: str, x: int, y: int, w: int, h: int, color: tuple[int, int, int] = (100, 100, 100), text_color: tuple[int, int, int] = (255, 255, 255), background: bool = True, label: str | None = None) -> data_types.ButtonStruct:
         '''
         Fabricates and returns text data. Could be utilized for buttons.
 
@@ -338,7 +375,7 @@ class Game:
         surf = self.font.render(text, True, text_color)
 
         return {
-            "label": text.strip(),
+            "label": label.strip() if label else text.strip(),
             "rect": rect,
             "color": color,
             "border_width": 3,
@@ -428,12 +465,24 @@ class Game:
         if moving and self.scene != "office":
             if not self.camera_channel or not self.camera_channel.get_busy():
                 self.camera_channel = self.camera_sound.play(-1)
-        else:
-            if self.camera_channel:
+        elif self.camera_channel:
                 self.camera_channel.stop()
                 self.camera_channel = None
+
+    def ambient_noise(self, sound: pygame.mixer.Sound):
+        while True:
+            time.sleep(random.randint(20, 60))
+            sound.play()
+
+    def check_and_play_lure_sound(self, mouse_pos) -> None:
+        if self.lure_sound_button['rect'].collidepoint(mouse_pos):
+            random.choice(self.lure_sounds).play()
+            for k in self.knights:
+                if self.scene in Knight.MAP_TREE[k.scene]: # If current camera is inside the range of the knight
+                    time.sleep(2)
+                    k.force_move(self.scene)
         
-    def check_buttons(self, event: pygame.event.Event):
+    def check_buttons(self, event: pygame.event.Event) -> None:
         '''
         Checks and runs the corresponding action for buttons that are pressed.
 
@@ -455,35 +504,43 @@ class Game:
                                 self.scene = button['label'].lower()
 
                         # Lure Sound
-                        # if self.lure_sound_button['rect'].collidepoint(mouse_pos):
-                            # random.choice(self.lure_sounds).play()
+                        threading.Thread(target=lambda: self.check_and_play_lure_sound(mouse_pos), daemon=True).start()
                     else:
                         if self.camera_button['rect'].collidepoint(mouse_pos):
                             self.camera_ui_active = True
                     
                 else:
-                    for button in self.not_playing_buttons:
-                        if button["rect"].collidepoint(mouse_pos):
-                            label = button['label']
+                    for b in self.not_playing_buttons:
+                        if b["rect"].collidepoint(mouse_pos):
+                            label = b['label']
 
-                            if label == "Start": # Start
+                            if label == "start": # Start
                                 self.playing = True
                                 self.scene = "office"
+
+                                threading.Thread(target=self.update_time, daemon=True).start()
+
+                                # Ambient Sound
+                                threading.Thread(target=lambda: self.ambient_noise(self.ambient1_sound), daemon=True).start()
 
                                 for knight in self.knights:
                                     knight.initiate_moving()
 
-                            elif label == "Credits": # Credits
+                            elif label == "credits": # Credits
                                 self.show_credits = not self.show_credits
     
     def check_jumpscare(self):
-        for knight in self.knights:
-            if knight.scene == "office":
+        for k in self.knights:
+            if k.scene == "office":
                 # Jumpscare
                 self.camera_ui_active = False
                 self.scene = "office"
                 
-                # knight.jumpscare_sound.play()
+                if not self.game_over:
+                    k.jumpscare_sound.play()
+
+                time.sleep(2.5)
+                self.game_over = True
 
     def update_game(self, dt: float) -> None:
         '''
@@ -500,8 +557,8 @@ class Game:
         bg_rect = scene_dict['rect']
 
         # Place and scale scene knights
-        for name in scene_dict['knights_in_scene']:
-            knight = scene_dict['knights'][name]
+        for n in scene_dict['knights_in_scene']:
+            knight = scene_dict['knights'][n]
 
             x, y = knight['position']
             knight['rect'].topleft = (
@@ -514,8 +571,7 @@ class Game:
             if self.static_channel and self.static_channel.get_busy():
                 self.static_channel.stop()
                 self.static_channel = None
-        else:
-            if not self.static_channel or not self.static_channel.get_busy():
+        elif not self.static_channel or not self.static_channel.get_busy():
                 self.static_channel = self.static_sound.play(-1)
 
     def update_frame(self) -> None:
@@ -530,20 +586,29 @@ class Game:
         self.screen.blit(scene_dict['image'], scene_dict['rect'])
 
         # Knights
-        for name, knight in scene_dict['knights'].items():
-            if name in scene_dict['knights_in_scene']:
-                self.screen.blit(knight['image'], knight['rect'])
+        for n, k in scene_dict['knights'].items():
+            if n in scene_dict['knights_in_scene']:
+                self.screen.blit(k['image'], k['rect'])
 
         # Buttons
         mouse = pygame.mouse.get_pos()
 
         if self.playing:
-            self.check_jumpscare() # Both UI and Game
+            threading.Thread(target=self.check_jumpscare, daemon=True).start() # Both UI and Game
+
+            minutes, seconds = divmod(self.time_left, 60)
+            time_text_surface = self.font.render(f"Time Left: {minutes}:{seconds}", True, (255, 255, 255))
+            time_text_rect = time_text_surface.get_rect(x=10, y=10)
+            self.screen.blit(time_text_surface, time_text_rect)
 
             if self.camera_ui_active:
                 self.screen.blit(self.mini_map[0], self.mini_map[1])
 
                 self.draw_buttons([self.alt_camera_button], mouse)
+
+                if self.scene != "office":
+                    self.draw_buttons([self.lure_sound_button], mouse)
+
                 self.draw_buttons(self.camera_buttons, mouse)
 
                 self.draw_text(self.create_text(self.scene.title(), self.WIDTH-150, 0, 150, 100, text_color=(0, 255, 0), background=False))
@@ -565,18 +630,20 @@ class Game:
         while self.running:
             dt = self.clock.tick(self.FPS) / 1000 # DeltaTime
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+            for e in pygame.event.get():
+                if e.type == pygame.QUIT:
                     self.running = False
 
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
+                if e.type == pygame.KEYDOWN:
+                    if e.key == pygame.K_ESCAPE:
                         self.running = False
 
-                self.check_buttons(event)
+                self.check_buttons(e)
 
             if not self.game_over:
                 self.update_game(dt)
+            else:
+                self.stop()
 
             self.update_frame()
         

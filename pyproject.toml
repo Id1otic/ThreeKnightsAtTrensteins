@@ -8,10 +8,12 @@ version = "1.0.0"
 description = "A Five Nights at Freddy's inspired survival game made with Pygame."
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+
 authors = [
     {name = "Mason Rustad"}
 ]
+
+license = {text = "MIT"}
 
 dependencies = [
     "pygame>=2.5.0",
@@ -22,13 +24,14 @@ keywords = [
     "fnaf",
     "game",
     "horror",
-    "python"
 ]
 
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
     "Topic :: Games/Entertainment",
 ]
+
+[project.scripts]
+five-knights-at-trensteins = "main:main"

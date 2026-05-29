@@ -15,7 +15,6 @@ Survive the night while the Knights roam through security cameras searching for 
 - Fullscreen gameplay
 - Custom UI system
 - Cheesy jumpscare mechanics
-- Press ESC to exit the game.
 
 ---
 
@@ -28,23 +27,13 @@ git clone https://github.com/Id1otic/FiveKnightsAtTrensteins.git
 cd FiveKnightsAtTrensteins
 ```
 
-Then install dependencies with:
-
-```bash
-pip install -r requirements.txt
-```
-
-or:
-
-```bash
-pip install pygame
-```
-
-or install the project in editable mode:
+Install the project in editable mode:
 
 ```bash
 pip install -e .
 ```
+
+This installs the game and its dependencies while allowing live code edits without reinstalling.
 
 ---
 

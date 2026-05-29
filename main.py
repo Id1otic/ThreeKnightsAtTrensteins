@@ -1,4 +1,9 @@
-# Five Knights at Trenstein's by Mason Rustad
+# Two Knights at Trenstein's by Mason Rustad
+
+# === RUN THIS FILE === #
+
+import os
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 from game import Game
 def main() -> None:
     '''
